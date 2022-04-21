@@ -1,80 +1,73 @@
 package pl.edu.agh.mwo.invoice;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-
+import java.util.Map;
 import pl.edu.agh.mwo.invoice.product.Product;
 
 public class Invoice {
+    private Map<Product, Integer> products = new HashMap<>();
+    private static int nextNumber = 0;
+    private final int number = ++nextNumber;
 
-    private final Collection<Product> products = new ArrayList<>();
+    public void addProduct(Product product) {
+        addProduct(product, 1);
+    }
 
-    public void addProduct(Product product)
-    {  this.products.add(product); }
-
-    private final HashMap<Product, Integer> quantities = new HashMap<>();
     public void addProduct(Product product, Integer quantity) {
-        if (quantity <= 0 ) throw new IllegalArgumentException("Incorrect data. Type a proper value of quantity please");
-        this.quantities.put (product, quantity);
+        if (product == null || quantity <= 0) {
+            throw new IllegalArgumentException();
+        }
+
+        if (products.keySet().contains(product)) {
+            Integer initialQuantity = products.get(product);
+            products.put(product, initialQuantity + quantity);
+        } else {
+
+            products.put(product, quantity);
+        }
     }
 
-
-    public BigDecimal getNetPrice1() {
-        BigDecimal sum = BigDecimal.ZERO;
-        for (Product product : this.products){
-            sum = sum.add(product.getPrice()) ;
+    public BigDecimal getNetTotal() {
+        BigDecimal totalNet = BigDecimal.ZERO;
+        for (Product product : products.keySet()) {
+            BigDecimal quantity = new BigDecimal(products.get(product));
+            totalNet = totalNet.add(product.getPrice().multiply(quantity));
         }
-        return sum;
+        return totalNet;
     }
 
-
-    public BigDecimal getTax() {
-        BigDecimal sumTax = BigDecimal.ZERO;
-        for (Product product : this.products){
-
-            sumTax = sumTax.add((product.getTaxPercent()).multiply(product.getPrice())) ;
-        }
-        return sumTax;
+    public BigDecimal getTaxTotal() {
+        return getGrossTotal().subtract(getNetTotal());
     }
 
-
-    public BigDecimal getTotal1() {
-        BigDecimal sum = BigDecimal.ZERO;
-        for (Product product : this.products){
-            sum = sum.add(product.getPrice()) ;
+    public BigDecimal getGrossTotal() {
+        BigDecimal totalGross = BigDecimal.ZERO;
+        for (Product product : products.keySet()) {
+            BigDecimal quantity = new BigDecimal(products.get(product));
+            totalGross = totalGross.add(product.getPriceWithTax().multiply(quantity));
         }
-        BigDecimal sumTax = BigDecimal.ZERO;
-        for (Product product : this.products){
-            sumTax = sumTax.add((product.getTaxPercent()).multiply(product.getPrice())) ;
-        }
-        return sum.add(sumTax);
+        return totalGross;
     }
 
-
-    public BigDecimal getNetPrice2() {
-        BigDecimal sum = BigDecimal.ZERO;
-        for (Product product : this.quantities.keySet()){
-            BigDecimal quantityAsBigDecimal = BigDecimal.valueOf(quantities.get(product));
-            sum = sum.add((product.getPrice()).multiply(quantityAsBigDecimal)) ;
-        }
-        return sum;
+    public int getNumber() {
+        return number;
     }
 
+    public String listaProduktow1() {
 
-    public BigDecimal getTotal2() {
-        BigDecimal sum = BigDecimal.ZERO;
-        for (Product product : this.quantities.keySet()){
-            BigDecimal quantityAsBigDecimal  = BigDecimal.valueOf(quantities.get(product));
-            sum = sum.add((product.getPrice()).multiply(quantityAsBigDecimal )) ;
-        }
-        BigDecimal sumTax = BigDecimal.ZERO;
-        for (Product product : this.quantities.keySet()){
-            BigDecimal quantityAsBigDecimal  = BigDecimal.valueOf(quantities.get(product));
-            sumTax = sumTax.add((product.getTaxPercent()).multiply(product.getPrice()).multiply(quantityAsBigDecimal)) ;
-        }
-        return sum.add(sumTax);
-    }}
+        int i = 0;
 
+        String listaProduktow = "Numer Faktury: " + getNumber() + "\n"
+                + "ProductName: \t" + "Quantity: \t" + "Unit price:\n";
+
+        for (Product product : products.keySet()) {
+            listaProduktow = listaProduktow + product.getName() + "nazwa produktu: \t"
+                    + products.get(product) + "sztuk:\t" + product.getPrice() + "cena razem pln: \n";
+
+            i ++;
+        }
+        return listaProduktow;
+    }
+}
 
